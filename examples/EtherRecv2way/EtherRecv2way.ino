@@ -20,7 +20,7 @@
 
 // Assumes WIZNET 5500 shield attached to pins CS/SS=10, MOSI=11, MISO=12, SCK=13, RST=9
 //#define ResetWIZ_PIN 9
-//#define WIZ_CS_PIN 10 
+#define WIZ_CS_PIN 10 
 
 // Enter a unique HostID (1-254) 
 // Assumes a Class C network and IP = (192, 168, 1, MYID).
@@ -54,12 +54,10 @@ AudioConnection          patchCord1(net_in1, 1, dacs1, 0);
 
 unsigned long  pkts, lastdropped, dropped = 0;
 short wiztype;
-//#define CE_SYNC_PIN 2  
-//bool syncPulse_CE = false;
+
 void setup() {
- // pinMode(CE_SYNC_PIN, OUTPUT);
- // digitalWrite(CE_SYNC_PIN, LOW);
- AudioMemory(40);
+
+ AudioMemory(20);
 #if DEBUG >0
     // Open serial communications and wait for port to open:
   Serial.begin(38400);
@@ -69,12 +67,12 @@ void setup() {
 #endif   
 delay(100);
     // start the Ethernet
-    EtherNet1.enable(); // order is important - start the control first
+    EtherNet1.begin(WIZ_CS_PIN); // order is important - start the control first
     EtherNet1.setMyID(MYID);
     net_in1.setControl(&EtherNet1);
     net_out1.setControl(&EtherNet1);
     net_out1.setAudioTargetID(TARGET_BCAST);
-    net_out1.setStreamName("Stream_F");
+    net_out1.setStreamName("Stream_Test");
  
 #if DEBUG > 0
     printDiagnostics();

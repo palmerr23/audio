@@ -59,7 +59,7 @@ void setup() {
     delay(1); 
   Serial.println("Hello world! SEND");
 #endif  
-  EtherNet1.enable(); // order is important - start the control first
+  EtherNet1.begin(WIZ_CS_PIN); // order is important - start the control first
   //net_out1.begin();
   //net_in1.begin();
   EtherNet1.setMyID(MYID);

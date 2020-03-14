@@ -6,12 +6,27 @@
  * The Ethernet code DOES NOT have an ISR() so something that does is required in the sketch for packets to flow (PWM or DAC used here). 
  */
  // Defaults to WIZNET 5500 shield attached to pins CS/SS=10, MOSI=11, MISO=12, SCK=13, RST=9 (RST optional)
-#define CS_PIN_E   (10)   // required
-#define SCK_PIN_E  (14)   // optional
-#define MISO_PIN_E (12)   // optional
-#define MOSI_PIN_E  (7)   // optional
-
-#define DEBUGPIN 4
+ // Pins here are for T4.0
+#define T4
+#ifdef STD_PINS
+  #define WIZ_CS_PIN 10 
+  #define WIZ_MOSI_PIN 11 
+  #define WIZ_MISO_PIN 12 
+  #define WIZ_SCK_PIN 13 
+#else // alt pins
+  #ifdef T4
+    #define WIZ_CS_PIN 10 
+    #define WIZ_MOSI_PIN 11 
+    #define WIZ_MISO_PIN 12 
+    #define WIZ_SCK_PIN 13 
+  #endif
+  #if defined(T32) || defined(T35_6)
+    #define WIZ_CS_PIN 10 
+    #define WIZ_MOSI_PIN 7 
+    #define WIZ_MISO_PIN 12 
+    #define WIZ_SCK_PIN 14 
+  #endif
+#endif
 #define DEBUG 1 // Set to 0 for no serial monitor messages
 
 //#define T4    // DACs not implemented on T4, so use PWM output instead.
@@ -50,10 +65,8 @@ const int myInput = AUDIO_INPUT_LINEIN;
 
 void setup() 
 {
-   AudioMemory(40);
+   AudioMemory(10);
  
-  pinMode(DEBUGPIN, OUTPUT);
-  digitalWrite(DEBUGPIN,HIGH); delay(4);digitalWrite(DEBUGPIN,LOW);delay(1);
 #if DEBUG > 0
     // Open serial communications and wait for port to open:
   Serial.begin(38400);
@@ -61,18 +74,16 @@ void setup()
     ; // wait for serial port to connect. Needed for native USB port only
   Serial.println("Ethernet Audio - SGTL500 + Alt SPI - recv");
 #endif   
-    digitalWrite(DEBUGPIN,HIGH); delay(4);digitalWrite(DEBUGPIN,LOW);delay(1);
+   
   sine1.amplitude(1.0);
   sine1.frequency(500);
-    // start Ethernet and input object
-        digitalWrite(DEBUGPIN,HIGH); delay(4);digitalWrite(DEBUGPIN,LOW);delay(1);
-    EtherNet1.begin(CS_PIN_E, SCK_PIN_E, MOSI_PIN_E, MISO_PIN_E);
-        digitalWrite(DEBUGPIN,HIGH); delay(4);digitalWrite(DEBUGPIN,LOW);delay(1);
+    // start Ethernet and input object        
+    EtherNet1.begin(WIZ_CS_PIN, WIZ_SCK_PIN, WIZ_MOSI_PIN, WIZ_MISO_PIN);        
     net_in1.begin();
-        digitalWrite(DEBUGPIN,HIGH); delay(4);digitalWrite(DEBUGPIN,LOW);delay(1);
+   
     EtherNet1.setMyID(MYID);
     net_in1.setControl(&EtherNet1);
-    digitalWrite(DEBUGPIN,HIGH); delay(4);digitalWrite(DEBUGPIN,LOW);delay(1);
+   
 //i2s1.begin();
   audioShield.enable();
   audioShield.inputSelect(myInput);
@@ -125,11 +136,11 @@ dbg = !dbg;
 
   // end of mandatory processing
 #if DEBUG > 0
-    if((millis() - td2) > (TIME_PRINT_EVERY * 1000)) // print every few seconds
+    if((micros() - td2) > (TIME_PRINT_EVERY * 1000000)) // print every few seconds
     {
          printGeneralStats();     
          printStreams();
-         td2 = millis();
+         td2 = micros();
     }     
 #endif
 }

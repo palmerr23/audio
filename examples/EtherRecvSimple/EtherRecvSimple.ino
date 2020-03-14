@@ -14,7 +14,7 @@
 
 // Assumes WIZNET 5500 shield attached to pins CS/SS=10, MOSI=11, MISO=12, SCK=13, RST=9 (RST optional)
 //#define ResetWIZ_PIN 9
-//#define WIZ_CS_PIN 10 
+#define WIZ_CS_PIN 10 
 
 // Enter a unique HostID (1-254) 
 // Assumes a Class C network and IP = (192, 168, 1, MYID).
@@ -57,7 +57,9 @@ void setup()
 #endif   
 
     // start Ethernet and input object
-    EtherNet1.enable(); // order is important - start the control first
+	EtherNet1.begin(WIZ_CS_PIN); // order is important - start the control first
+    // EtherNet1.begin(WIZ_CS_PIN, WIZ_SCK_PIN, WIZ_MOSI_PIN, WIZ_MISO_PIN); // alternate pins
+
     net_in1.begin();
     EtherNet1.setMyID(MYID);
     net_in1.setControl(&EtherNet1);

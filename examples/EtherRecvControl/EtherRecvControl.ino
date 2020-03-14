@@ -15,7 +15,7 @@
 
 // Assumes WIZNET 5500 shield attached to pins CS/SS=10, MOSI=11, MISO=12, SCK=13, RST=9
 //#define ResetWIZ_PIN 9
-//#define WIZ_CS_PIN 10 
+#define WIZ_CS_PIN 10 
 
 #define SINCONTROL 129 // pktType and payload for a user defined control message
 typedef struct sineMessage 
@@ -67,7 +67,7 @@ void setup()
 #endif   
 
     // start the Ethernet
-    EtherNet1.enable(); // order is important - start the control first
+    EtherNet1.begin(WIZ_CS_PIN); // order is important - start the control first
     net_in1.begin();
     EtherNet1.setMyID(MYID);
     net_in1.setControl(&EtherNet1);

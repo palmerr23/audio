@@ -12,7 +12,7 @@
 // Assumes WIZNET 5500 shield attached to pins CS/SS=10, MOSI=11, MISO=12, SCK=13, RST=9
 // pin definitions must be before #include <audio.h>
 //#define ResetWIZ_PIN 9
-//#define WIZ_CS_PIN 10 
+#define WIZ_CS_PIN 10 
 
 #define SINCONTROL 129
 typedef struct sineMessage 
@@ -56,8 +56,8 @@ void setup() {
     delay(1); 
   Serial.println("Ethernet Audio - Broadcast single stream - 2 sine waves");
 #endif  
-  EtherNet1.enable(); // order is important - start the control first
-  net_out1.begin();
+  EtherNet1.begin(WIZ_CS_PIN); // order is important - start the control first
+  //net_out1.begin();
   EtherNet1.setMyID(MYID);
   net_out1.setControl(&EtherNet1);
   net_out1.setAudioTargetID(TARGET_BCAST);
