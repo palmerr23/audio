@@ -24,6 +24,11 @@
  * THE SOFTWARE.
  */
  
+ // (RP) ****** This object does not accept update_responsibility - ONE device that does needs to be in your sketch (e.g. a DAC output) ****
+ // All IO handling is in the Ethernet, EthernetUDP & SPI Libraries 
+ // WIZNET handles registration of hosts, other control (not audio related) messaging through separate UDP port
+ // This version handles 2 channels, 128 sample blocks. 
+
 
 #include <Arduino.h>
 #include "control_ethernet.h"
@@ -83,8 +88,8 @@ Serial.print("CE: CS "); Serial.println(csPin);
     delay(100); // tReset is < 500uS	 
 #endif
 
-	Ethernet.init(csPin);  // Most Arduino shields use 10	 for SPC_CS
-	Ethernet.begin(defaultMAC_CE, defaultIP_CE); // ugly but effective! Change them from the running code using setXXX()
+	Ethernet.init(csPin); 
+	Ethernet.begin(defaultMAC_CE, defaultIP_CE); // Change values from the running code using setXXX()
 	memcpy(_myMAC, defaultMAC_CE, 6);
 	_myIP = defaultIP_CE;
 	Ethernet.setSubnetMask(defaultNetMask_CE);
@@ -113,8 +118,7 @@ Serial.print("CE: CS "); Serial.println(csPin);
 
    Serial.print("CE: Ether Audio stream: "); Serial.println(isActive() ? "Active" : "Inactive");
 #endif
-  myLinkOn = (Ethernet.linkStatus() == LinkON); // Don't call linkStatus() directly from user space, as it initiates an SPI transaction IMMEDIATELY. Use getLinkStatus() instead.
-   ethernetEnabled = true;
+  myLinkOn = (Ethernet.linkStatus() == LinkON); // Don't call Ethernet.linkStatus() directly from user space, as it initiates an SPI transaction IMMEDIATELY. Use getLinkStatus() instead.
    
 #if CE_SYNC_DEBUG > 0
 		pinMode(CE_SYNC_PIN, OUTPUT);
@@ -123,11 +127,12 @@ Serial.print("CE: CS "); Serial.println(csPin);
 #if CE_SERIAL_DEBUG > 0
     Serial.println("CE: control_ethernet.begin() complete"); 
 #endif
-   enable(); // now enable() the audioSream processing
+   enable(); // now enable() the audioStream processing
+   ethernetEnabled = true;
    return (wiztype != EthernetNoHardware);
 }
 
-// queue and audio lib intialization
+// queue and audio lib intialization -- called from begin()
 bool AudioControlEtherNet::enable()
 { 
 	short i;
@@ -189,7 +194,7 @@ bool AudioControlEtherNet::enable()
     Serial.println("CE: control_ethernet.enable() complete"); 
 #endif
    initializedQ = true;
-   digitalWrite(4,HIGH); delay(6); digitalWrite(4,LOW);	delay(1); 
+   //digitalWrite(4,HIGH); delay(6); digitalWrite(4,LOW);	delay(1); 
    return true;
 }
 
@@ -204,6 +209,7 @@ void AudioControlEtherNet::update(void)
 uint8_t  thisHost, thisHostStream; 
 short pktsCycle;
 short i,  packetSize = 0;
+//	Serial.println("EU"); //delay(1);
 #if CE_SYNC_DEBUG > 0	
 	digitalWrite(CE_SYNC_PIN, (syncPulse_CE ? HIGH : LOW));
 	syncPulse_CE = !syncPulse_CE;
@@ -238,7 +244,7 @@ short i,  packetSize = 0;
 	/*********** CLEAN UP Qs ***************/
 	// age and clear out any expired blocks (audio/control)
 	// unless there's a flood of received audio blocks, these will mostly be unread control blocks from other hosts - i.e. not subscribed.
-
+//Serial.println("E1"); //delay(1);
 #if CE_SERIAL_DEBUG > 15
 	Serial.print(" AI ");
 	Serial.print(cleanAudioQueue(&audioQ_I) ? "" : " CAQ bad ");// audio queue aging and cleanout 
@@ -307,6 +313,7 @@ short i,  packetSize = 0;
 	}
 	ce_reportCntr++ ;
 #endif	
+//Serial.print(" EX "); Serial.println(AudioMemoryUsage());
 } // update
 
 /****************  Stream functions ******************/

@@ -70,10 +70,12 @@ public:
 	short setStreamID(short id);
 	unsigned long getCurPktNo(void) ;
 	
-	// need friend class AudioControlEtherNet; // work with the WIZNET control class
+	// needs friend class AudioControlEtherNet  
 protected:
+	// double buffering: local_block_O = read from AudioLib;  local_block_out = second buffer (copied from local_block_O and used to transmit) allowing audio lib buffer to be released
+	// MAY NOT be required.
 	audio_block_t *local_block_O[MAXCHANNELS];		
-	audio_block_t * local_block_out[MAXCHANNELS];
+	audio_block_t *local_block_out[MAXCHANNELS];
 	audio_block_t *inputQueueArray[2];
 
 	static void isr(void);

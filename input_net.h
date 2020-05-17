@@ -57,7 +57,7 @@ class AudioControlEtherNet; // need this friend class
 class AudioInputNet : public AudioStream
 {
 public:
-	AudioInputNet(void) : AudioStream(0, NULL) { begin(); }
+	AudioInputNet(void) : AudioStream(0, NULL) { } // begin();
 	void begin(void);	
 	virtual void update(void);
 
@@ -85,7 +85,7 @@ private:
 	short _myObjectID ; // registered ID for control queue data.
 
 	// internal buffers and pointers
-	audio_block_t zeroBlockI; // a block of zero samples.
+//	audio_block_t zeroBlockI; // a block of zero samples.
 
 	// internal status and control
 	//short qq;

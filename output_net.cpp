@@ -58,8 +58,8 @@ void AudioOutputNet::begin(void)
 	currentPacket_O = 0;
 	ethernetUp_O = false;
 	
-	aTargetID = TARGET_BCAST;	// broadcast packets by default
-	updateStreamMsgCntr = UPDATE_MSGS_EVERY; // set up streamInfo counter
+	aTargetID = TARGET_BCAST;				 // broadcast packets by default
+	updateStreamMsgCntr = UPDATE_MSGS_EVERY; // streamInfo packet send timer
 	outputBegun = true;
 #if OUT_ETH_SERIAL_DEBUG > 0
   Serial.println("ON: outputNet.begin() complete");
@@ -131,6 +131,7 @@ void AudioOutputNet::update(void)
 
 //Serial.print(" *");
 	// create new buffers so that we can release the ones from receiveReadOnly()
+	// double buffering may not be required???
 	local_block_out[0] = allocate(); 
 	local_block_out[1] = allocate();
 	bloxx +=2;
@@ -156,8 +157,7 @@ void AudioOutputNet::update(void)
 
 /*	*/
 //Serial.print("@");	
-	// assign new audio buffers to a transmit block and queue them
-	
+	// assign new audio buffers to a transmit block and queue them	
 	short aQ = myControl_O->getLinkNewQblk_A(&myControl_O->audioQ_O);	
 #if OUT_ETH_SERIAL_DEBUG > 15
 
@@ -225,7 +225,7 @@ void AudioOutputNet::setStreamName(char * sName)
 {
 	// myControl_O and myStreamID_O can take several update() cycles to be established after start. 
 	if(myControl_O == NULL || myStreamID_O < 0)
-		delay(10); // less prone to trouble than while(myControl_O == NULL);
+		delay(50); // less prone to trouble than while(myControl_O == NULL);
 	myControl_O->setStreamName_O(sName, myStreamID_O);
 }
 

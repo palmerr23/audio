@@ -22,13 +22,11 @@
  * THE SOFTWARE.
  */
 
- // 2015/08/23: (FB) added mute_PCM() - sets or unsets VALID in VUCP (and adjusts PARITY)
- // ****** This object does not accept update_responsibility - ONE device that does needs to be in your sketch (e.g. a DAC output) ****
- // (RP)
+ // (RP) ****** This object does not accept update_responsibility - ONE device that does needs to be in your sketch (e.g. a DAC output) ****
  // All IO handling is in the Ethernet, EthernetUDP & SPI Libraries 
  // WIZNET handles registration of hosts, other control (not audio related) messaging through separate UDP port
  // This version handles 2 channels, 128 sample blocks. 
- // 8 channel version may need to split 128 sample blocks into two datagrams to avoid exceeding MTU of 1500 bytes
+
 
 
 #include <Arduino.h>
@@ -45,7 +43,7 @@ void AudioInputNet::begin(void)
 	currentPacket_I = 0; // initialize packet sequence
 	myControl_I = NULL;
 	 _myObjectID = -1; 
-	memset(&zeroBlockI, 0, SAMPLES_2); // create an audio block of zeros for when no packets are available.
+//	memset(&zeroBlockI, 0, SAMPLES_2); // create an audio block of zeros for when no packets are available.
 	_myStream_I = -1; 
 	blocksRecd_I = missingBlocks_I = 0;
 	inputBegun = true;
@@ -58,58 +56,65 @@ void AudioInputNet::begin(void)
 void AudioInputNet::update(void)
 {
 short aIndex;
-	if (!inputBegun) // no processing at all until begin() is complete
-		return;
-
+//	Serial.print("NI ");
 #if IN_ETH_SERIAL_DEBUG > 15
 	Serial.print("{I ");
 	//Serial.print((myControl_I == NULL)? "NC " : "CTL ");
 #endif	
-	if (myControl_I == NULL) // transmit silence until the ethernet control is defined and enabled
+	if (!inputBegun) // no processing at all until begin() is complete
+		return;
+	// transmit silence until the ethernet control is defined and enabled
+	// this code may not be strictly necessary, as AudioLib copes with no blocks transmitted???
+	if (myControl_I == NULL) 
 	{
-		transmit(&zeroBlockI, 0);
-		transmit(&zeroBlockI, 1);	
+		//transmit(&zeroBlockI, 0);
+		//transmit(&zeroBlockI, 1);	
+//Serial.print("1");
 		return;
 	}
-	if (!(myControl_I->ethernetEnabled))	// need sequential tests to avoid NULL pointer issues	
+	
+	if (!(myControl_I->ethernetEnabled))	// Ethernet not enabled. Need sequential tests to avoid myControl_I NULL pointer issues	with this test
 	{
-		transmit(&zeroBlockI, 0);
-		transmit(&zeroBlockI, 1);	
+		//transmit(&zeroBlockI, 0);
+		//transmit(&zeroBlockI, 1);	
+//Serial.print("2");
 		return;
 	}
-		
-	//register for control queue packets if not already done 
+//Serial.print("A ");		
+	// register for control queue packets if not already done 
 	if(_myObjectID < 0)
 		_myObjectID = myControl_I->registerObject();
 	
-	// check for audio packets from control_ethernet object for this stream
-	// transmit and release blocks
 	// audio blocks already created in ethernet_control - destroyed there as well
+	// check for audio packets from control_ethernet object for this stream
 	// get next block and mark as consumed by me (subscribed--)
-	aIndex = myControl_I->getNextAudioQblk_I( _myStream_I );  // anything in my subscribed stream? 
+	// transmit and release blocks
+	aIndex = myControl_I->getNextAudioQblk_I( _myStream_I );  // anything in my subscribed stream? If so, block index is returned.
 
 	if (aIndex != -1) { 		
 		currentPacket_I = myControl_I->Qblk_A[aIndex].sequence;
-		transmit(myControl_I->Qblk_A[aIndex].bufPtr[0], 0); // cleanup routine will release these blocks. as someone else might be subscribed
-		transmit(myControl_I->Qblk_A[aIndex].bufPtr[1], 1);		//myControl_I->Qblk_A[aIndex].subscribed--; // I'm subscribed to this stream, and have consumed this block 
+		transmit(myControl_I->Qblk_A[aIndex].bufPtr[0], 0);    // cleanup routine will release these blocks. as someone else might be subscribed
+		transmit(myControl_I->Qblk_A[aIndex].bufPtr[1], 1);	   
+		// myControl_I->Qblk_A[aIndex].subscribed--; // I'm subscribed to this stream, and have consumed this block ||| WHY IS THIS COMMENTED OUT?
 		blocksRecd_I++;
+//Serial.print("3");
 	} 
 	else
-	{  // no current block from ethernet, so send a block of zeros 
-		transmit(&zeroBlockI, 0);
-		transmit(&zeroBlockI, 1);	
+	{  // no current block from ethernet, so send a block of zeros (may not need to do this??)
+		//transmit(&zeroBlockI, 0);
+		//transmit(&zeroBlockI, 1);	
 		missingBlocks_I++;
-
-		// don't count missing blocks before link is up and reset after disconnection
+//Serial.print("4");
+		// reset counters on disconnection
 		if(myControl_I->getLinkStatus() && myControl_I->streamsIn[_myStream_I].active)
 		{
 
 //Serial.print(" *"); Serial.print(_myObjectID);
 
 #if IN_ETH_SERIAL_DEBUG > 0
-			Serial.print("*** Missing block: "); Serial.print(blocksRecd_I); 
+			Serial.print("*** IN: Missing block: "); Serial.print(missingBlocks_I);
 			Serial.print(" input["); Serial.print(_myObjectID); 
-			Serial.print("], total = "); Serial.print(missingBlocks_I);
+			Serial.print("], total recd = "); Serial.print(blocksRecd_I); 
 			if(blocksRecd_I > 0) 
 			{
 				Serial.print(". Loss ratio = "); Serial.print((float)missingBlocks_I*100/blocksRecd_I,3); Serial.print("%");
@@ -122,7 +127,6 @@ short aIndex;
 	} // transmit block
 	
 	// transit control queue looking for things we care about
-	// nothing defined at the moment.
 	// stream messages handled by network layer
 #if IN_ETH_SERIAL_DEBUG > 5
 			if ((it_report_cntr++ % IT_REPORT_EVERY )== 0)
@@ -141,6 +145,7 @@ short aIndex;
 #if IN_ETH_SERIAL_DEBUG > 15
 	Serial.println("}");
 #endif
+	//Serial.println(" NX");
 }
 
 void AudioInputNet::setControl(AudioControlEtherNet * cont) 
